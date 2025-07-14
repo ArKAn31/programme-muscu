@@ -1,62 +1,57 @@
 import streamlit as st
 import pandas as pd
 
-# Chargement du programme
-@st.cache_data
-def load_data():
-    df = pd.read_csv("programme_muscu_streamlit.csv")
-    return df
+st.set_page_config(layout="centered", page_title="Programme Muscu", page_icon="💪")
 
-df = load_data()
+# Load data
+df = pd.read_csv("programme_muscu_streamlit.csv")
 
-st.set_page_config(page_title="Programme Muscu", layout="centered")
-st.markdown("""
-    <style>
-    .superset-box {
-        border: 2px solid #4CAF50;
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 20px;
-        background-color: #f9f9f9;
-    }
-    .done-icon {
-        font-size: 30px;
-        color: #4CAF50;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# Checkbox state
+if "checked" not in st.session_state:
+    st.session_state.checked = {}
 
-st.title("🏋️ Programme Muscu Complet")
+st.title("🏋️‍♂️ Ton Programme Muscu Stylé")
 
-# Sélection du jour
+# Selection jour
 jours = sorted(df["Jour"].unique())
-jour_select = st.selectbox("Choisis ton jour :", jours)
+jour_select = st.selectbox("📅 Sélectionne ton jour :", jours)
 
-# Filtrage des supersets
-supersets = sorted(df[df["Jour"] == jour_select]["Superset"].unique())
-superset_select = st.selectbox("Choisis le Superset :", supersets)
+# Filter by selected jour
+df_jour = df[df["Jour"] == jour_select]
 
-# Filtrage des lignes concernées
-bloc = df[(df["Jour"] == jour_select) & (df["Superset"] == superset_select)].reset_index(drop=True)
+# Selection bloc
+blocs = sorted(df_jour["Bloc"].unique())
+bloc_select = st.selectbox("🎯 Choisis ton Superset :", blocs)
 
-# Affichage de la zone d'exercice
-st.markdown(f"<div class='superset-box'>", unsafe_allow_html=True)
-st.subheader(f"{bloc['Exercice 1'][0]} + {bloc['Exercice 2'][0]}")
-st.write("**Séries :**")
+# Filter by bloc
+df_bloc = df_jour[df_jour["Bloc"] == bloc_select]
 
-checkboxes = []
-for i, row in bloc.iterrows():
-    label = f"Série {i % 4 + 1}"
-    checked = st.checkbox(label, key=f"{jour_select}_{superset_select}_{i}")
-    checkboxes.append(checked)
+# Get exercice name
+exercice = df_bloc["Exercice"].iloc[0]
+st.markdown(f"### 💥 Exercice : *{exercice}*")
 
-if all(checkboxes):
-    st.markdown("<div class='done-icon'>✅ Superset complété !</div>", unsafe_allow_html=True)
+# Affiche les séries avec checkbox
+series = df_bloc["Series_Reps"].tolist()
+all_done = True
+for serie in series:
+    key = f"{jour_select}-{bloc_select}-{serie}"
+    if key not in st.session_state.checked:
+        st.session_state.checked[key] = False
 
-# Reset Button
-if st.button("Reset les cases ❌"):
-    for i in range(len(checkboxes)):
-        st.session_state[f"{jour_select}_{superset_select}_{i}"] = False
+    st.session_state.checked[key] = st.checkbox(f"✅ {serie}", key=key, value=st.session_state.checked[key])
+    if not st.session_state.checked[key]:
+        all_done = False
 
-st.markdown("</div>", unsafe_allow_html=True)
+# Logo validé si tout est coché
+if all_done:
+    st.success("✅ Superset complété !")
+    st.image("https://cdn-icons-png.flaticon.com/512/190/190411.png", width=100)
+
+# Bouton pour reset le bloc
+if st.button("🔄 Réinitialiser ce bloc"):
+    for serie in series:
+        key = f"{jour_select}-{bloc_select}-{serie}"
+        st.session_state.checked[key] = False
+    st.rerun()
+
 
