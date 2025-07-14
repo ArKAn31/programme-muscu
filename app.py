@@ -1,51 +1,51 @@
 import streamlit as st
 import pandas as pd
+from streamlit.runtime.scriptrunner import RerunException
+from streamlit.runtime.scriptrunner.script_run_context import get_script_run_ctx
 
-# Configuration de la page
-st.set_page_config(page_title="Programme Muscu Stylé", page_icon="💪", layout="centered")
+st.set_page_config(page_title="Programme Muscu Stylé", layout="centered")
 
-# Chargement du CSV
+# 💪 Titre
+st.markdown("<h1 style='text-align: center;'>💪 Ton Programme Muscu Stylé</h1>", unsafe_allow_html=True)
+
+# 📄 Charger les données
 df = pd.read_csv("programme_muscu_streamlit.csv")
 
-st.title("💪 Ton Programme Muscu Stylé")
-
-# 🔐 Fonction pour clé unique
+# 🔑 Créer une clé unique pour chaque série
 def get_key(jour, bloc, serie):
     return f"{jour}_{bloc}_{serie}"
 
-# 🗓️ Sélection du jour
+# 📅 Choisir le jour
 jours = sorted(df["Jour"].unique())
 jour_select = st.selectbox("📅 Sélectionne ton jour :", jours)
 
-# 🎯 Sélection du bloc
-df_jour = df[df["Jour"] == jour_select]
-blocs = sorted(df_jour["Bloc"].unique())
+# 🎯 Choisir le Superset (bloc)
+blocs = sorted(df[df["Jour"] == jour_select]["Bloc"].unique())
 bloc_select = st.selectbox("🎯 Choisis ton Superset :", blocs)
 
-# Filtrer le superset
-df_bloc = df_jour[df_jour["Bloc"] == bloc_select]
-exercice = df_bloc["Exercice"].iloc[0]
+# 🔍 Filtrer le DataFrame selon jour + bloc
+df_bloc = df[(df["Jour"] == jour_select) & (df["Bloc"] == bloc_select)]
 
-st.markdown(f"### 💥 **Exercice : _{exercice}_**")
+# 🏋️‍♂️ Afficher les infos du bloc
+exercice = df_bloc.iloc[0]["Exercice"]
+st.markdown(f"### 💥 <span style='color:#000;'>Exercice : <em>{exercice}</em></span>", unsafe_allow_html=True)
 
-# ✅ Affichage des séries avec cases à cocher
-checkbox_states = []
+# ✅ Séries à cocher
 for i, row in df_bloc.iterrows():
     key = get_key(row["Jour"], row["Bloc"], row["Series_Reps"])
-    checked = st.checkbox(f"🔥 {row['Series_Reps']} : 10 reps", key=key)
-    checkbox_states.append(checked)
+    checked = st.session_state.get(key, False)
+    st.session_state[key] = st.checkbox(f"🔥 {row['Series_Reps']} : 10 reps", key=key, value=checked)
 
-# 🔄 Réinitialiser uniquement les clés du bloc courant
-if st.button("🔁 Réinitialiser ce bloc"):
+# 🔁 Bouton de réinitialisation
+if st.button("🔄 Réinitialiser ce bloc"):
     for i, row in df_bloc.iterrows():
         key = get_key(row["Jour"], row["Bloc"], row["Series_Reps"])
         if key in st.session_state:
             del st.session_state[key]
-    st.experimental_rerun()  # fonctionne ici sans import caché
 
-# ✅ Message de succès
-if checkbox_states and all(checkbox_states):
-    st.success("✅ Superset terminé ! Bien joué champion 🏆")
+    ctx = get_script_run_ctx()
+    if ctx:
+        raise RerunException(ctx)
 
 
 
