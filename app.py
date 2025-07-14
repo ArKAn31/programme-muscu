@@ -1,54 +1,62 @@
 import streamlit as st
 import pandas as pd
 
-# Configuration de la page
-st.set_page_config(page_title="Programme Muscu Pro", layout="centered")
+# Chargement du programme
+@st.cache_data
+def load_data():
+    df = pd.read_csv("programme_muscu_streamlit.csv")
+    return df
 
-# Charger le fichier CSV
-df = pd.read_csv("programme_muscu_streamlit.csv")
+df = load_data()
 
-# Titre principal
-st.title("💪 Programme Muscu Pro")
+st.set_page_config(page_title="Programme Muscu", layout="centered")
+st.markdown("""
+    <style>
+    .superset-box {
+        border: 2px solid #4CAF50;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        background-color: #f9f9f9;
+    }
+    .done-icon {
+        font-size: 30px;
+        color: #4CAF50;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Sidebar avec navigation entre les jours
-jours = df["Jour"].unique()
-jour_selectionne = st.sidebar.radio("📅 Choisis ta séance :", jours)
+st.title("🏋️ Programme Muscu Complet")
 
-# Bouton de reset des cases cochées pour la séance en cours
-if st.button("♻️ Réinitialiser cette séance"):
-    for key in st.session_state.keys():
-        st.session_state[key] = False
+# Sélection du jour
+jours = sorted(df["Jour"].unique())
+jour_select = st.selectbox("Choisis ton jour :", jours)
 
-# Filtrer les blocs du jour sélectionné
-jour_df = df[df["Jour"] == jour_selectionne]
+# Filtrage des supersets
+supersets = sorted(df[df["Jour"] == jour_select]["Superset"].unique())
+superset_select = st.selectbox("Choisis le Superset :", supersets)
 
-# Affichage de la séance sélectionnée
-st.header(jour_selectionne)
+# Filtrage des lignes concernées
+bloc = df[(df["Jour"] == jour_select) & (df["Superset"] == superset_select)].reset_index(drop=True)
 
-# Boucle sur les supersets
-for i, row in jour_df.iterrows():
-    bloc = row["Bloc"]
-    exercice = row["Exercice"]
-    series = row["Series_Reps"]
-    checkbox_id = f"{jour_selectionne}_{i}"
+# Affichage de la zone d'exercice
+st.markdown(f"<div class='superset-box'>", unsafe_allow_html=True)
+st.subheader(f"{bloc['Exercice 1'][0]} + {bloc['Exercice 2'][0]}")
+st.write("**Séries :**")
 
-    with st.expander(f"✅ {bloc}"):
-        st.write(f"**Exercice :** {exercice}")
-        st.write(f"**Séries/Répétitions :** {series}")
-        st.checkbox("Marquer comme terminé", key=checkbox_id)
+checkboxes = []
+for i, row in bloc.iterrows():
+    label = f"Série {i % 4 + 1}"
+    checked = st.checkbox(label, key=f"{jour_select}_{superset_select}_{i}")
+    checkboxes.append(checked)
 
-# Suggestions spécifiques séance bras
-if jour_selectionne.lower() == "jour 4":
-    st.markdown("---")
-    st.subheader("🔧 Suggestions séance bras")
-    st.markdown(
-        """
-        - Mettre les biceps avant les triceps (point faible)
-        - Alléger les curls trop proches (marteau + barre droite)
-        - Dernier superset → écrire juste « Avant-bras / Abdos (libre) »
-        """
-    )
+if all(checkboxes):
+    st.markdown("<div class='done-icon'>✅ Superset complété !</div>", unsafe_allow_html=True)
 
-# Pied de page
-st.markdown("---")
-st.caption("🛠️ Fait avec Streamlit pour booster tes séances !")
+# Reset Button
+if st.button("Reset les cases ❌"):
+    for i in range(len(checkboxes)):
+        st.session_state[f"{jour_select}_{superset_select}_{i}"] = False
+
+st.markdown("</div>", unsafe_allow_html=True)
+
