@@ -1,48 +1,48 @@
 import streamlit as st
 import pandas as pd
 
-# Configuration de la page
-st.set_page_config(page_title="Programme Muscu Stylé", layout="centered")
+# Titre
+st.markdown("## 💪 Ton Programme Muscu Stylé")
 
-# Titre principal
-st.markdown("<h1 style='text-align: center;'>💪 Ton Programme Muscu Stylé</h1>", unsafe_allow_html=True)
+# Lecture du CSV
+df = pd.read_csv("programme.csv")
 
-# Charger le fichier CSV
-df = pd.read_csv("programme_muscu_streamlit.csv")
-
-# Créer une clé unique pour chaque case à cocher
-def get_key(jour, bloc, serie):
-    return f"{jour}_{bloc}_{serie}"
-
-# Sélection du jour
+# Sélection du jour et du superset
 jours = sorted(df["Jour"].unique())
 jour_select = st.selectbox("📅 Sélectionne ton jour :", jours)
 
-# Sélection du bloc / superset
-blocs = sorted(df[df["Jour"] == jour_select]["Bloc"].unique())
-bloc_select = st.selectbox("🎯 Choisis ton Superset :", blocs)
+supersets = sorted(df[df["Jour"] == jour_select]["Bloc"].unique())
+superset_select = st.selectbox("🎯 Choisis ton Superset :", supersets)
 
-# Filtrer le dataframe pour ce bloc
-df_bloc = df[(df["Jour"] == jour_select) & (df["Bloc"] == bloc_select)]
+# Filtrage des données
+bloc_data = df[(df["Jour"] == jour_select) & (df["Bloc"] == superset_select)]
 
-# Afficher l'exercice correspondant
-exercice = df_bloc.iloc[0]["Exercice"]
-st.markdown(f"### 💥 <span style='color:#000;'>Exercice : <em>{exercice}</em></span>", unsafe_allow_html=True)
+# Affichage de l'exercice
+exercice_nom = bloc_data["Exercice"].iloc[0]
+st.markdown(f"### 💥 *Exercice* : **_{exercice_nom}_**")
 
-# Afficher les séries avec des cases à cocher
-for i, row in df_bloc.iterrows():
-    key = get_key(row["Jour"], row["Bloc"], row["Series_Reps"])
+# Création des cases à cocher
+all_checked = True
+for i, row in bloc_data.iterrows():
+    key = f"{jour_select}_{superset_select}_{row['Series_Reps']}"
     if key not in st.session_state:
         st.session_state[key] = False
-    st.checkbox(f"🔥 {row['Series_Reps']}", key=key)
 
-# Bouton pour reset uniquement ce bloc
-if st.button("🔁 Réinitialiser ce bloc"):
-    for i, row in df_bloc.iterrows():
-        key = get_key(row["Jour"], row["Bloc"], row["Series_Reps"])
-        if key in st.session_state:
-            del st.session_state[key]
-    st.experimental_rerun()
+    st.session_state[key] = st.checkbox(f"🔥 {row['Series_Reps']}", key=key)
+    if not st.session_state[key]:
+        all_checked = False
+
+# ✅ Affichage du logo de validation si toutes les séries sont faites
+if all_checked:
+    st.success("✅ Superset validé, bien joué champion !")
+
+# 🔄 Bouton de réinitialisation
+if st.button("🔄 Réinitialiser ce bloc"):
+    for i, row in bloc_data.iterrows():
+        key = f"{jour_select}_{superset_select}_{row['Series_Reps']}"
+        st.session_state[key] = False
+    st.experimental_set_query_params()  # évite les rerun inutiles
+    st.warning("🔁 Bloc réinitialisé.")
 
 
 
