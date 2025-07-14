@@ -1,7 +1,5 @@
 import streamlit as st
 import pandas as pd
-from streamlit.runtime.scriptrunner import RerunException
-from streamlit.runtime.scriptrunner.script_run_context import get_script_run_ctx
 
 # Configuration de la page
 st.set_page_config(page_title="Programme Muscu Stylé", page_icon="💪", layout="centered")
@@ -34,19 +32,19 @@ st.markdown(f"### 💥 **Exercice : _{exercice}_**")
 checkbox_states = []
 for i, row in df_bloc.iterrows():
     key = get_key(row["Jour"], row["Bloc"], row["Series_Reps"])
-    checked = st.checkbox(f"🔥 {row['Series_Reps']} : 10 reps", key=key)
-    checkbox_states.append(checked)
+    if key not in st.session_state:
+        st.session_state[key] = False
+    st.session_state[key] = st.checkbox(f"🔥 {row['Series_Reps']} : 10 reps", key=key)
+    checkbox_states.append(st.session_state[key])
 
 # 🔄 Réinitialisation des cases du bloc
 if st.button("🔁 Réinitialiser ce bloc"):
     for i, row in df_bloc.iterrows():
         key = get_key(row["Jour"], row["Bloc"], row["Series_Reps"])
-        if key in st.session_state:
-            del st.session_state[key]
-    raise RerunException(get_script_run_ctx())
+        st.session_state[key] = False
 
 # ✅ Affichage d’un message si tout est coché
-if all(checkbox_states):
+if all(checkbox_states) and checkbox_states:
     st.success("✅ Superset terminé ! Bien joué champion 🏆")
 
 
