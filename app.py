@@ -38,7 +38,7 @@ for serie in series:
     if key not in st.session_state.checked:
         st.session_state.checked[key] = False
 
-    st.session_state.checked[key] = st.checkbox(f"✅ {serie}", key=key, value=st.session_state.checked[key])
+    st.session_state.checked[key] = st.checkbox(f"📌 {serie}", key=key, value=st.session_state.checked[key])
     if not st.session_state.checked[key]:
         all_done = False
 
@@ -53,5 +53,6 @@ if st.button("🔄 Réinitialiser ce bloc"):
         key = f"{jour_select}-{bloc_select}-{serie}"
         st.session_state.checked[key] = False
     st.rerun()
+
 
 
