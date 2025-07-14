@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+from streamlit.runtime.scriptrunner import RerunException
+from streamlit.runtime.scriptrunner.script_run_context import get_script_run_ctx
 
 # Configuration de la page
 st.set_page_config(page_title="Programme Muscu Stylé", page_icon="💪", layout="centered")
@@ -41,11 +43,12 @@ if st.button("🔁 Réinitialiser ce bloc"):
         key = get_key(row["Jour"], row["Bloc"], row["Series_Reps"])
         if key in st.session_state:
             del st.session_state[key]
-    st.experimental_rerun()
+    raise RerunException(get_script_run_ctx())
 
 # ✅ Affichage d’un message si tout est coché
 if all(checkbox_states):
     st.success("✅ Superset terminé ! Bien joué champion 🏆")
+
 
 
 
