@@ -28,18 +28,19 @@ df_bloc = df[(df["Jour"] == jour_select) & (df["Bloc"] == bloc_select)]
 exercice = df_bloc.iloc[0]["Exercice"]
 st.markdown(f"### 💥 <span style='color:#000;'>Exercice : <em>{exercice}</em></span>", unsafe_allow_html=True)
 
-# ✅ Afficher les séries
+# ✅ Afficher les séries avec cases à cocher
 for i, row in df_bloc.iterrows():
     key = get_key(row["Jour"], row["Bloc"], row["Series_Reps"])
     if key not in st.session_state:
         st.session_state[key] = False
-    st.session_state[key] = st.checkbox(f"🔥 {row['Series_Reps']}", key=key, value=st.session_state[key])
+    st.checkbox(f"🔥 {row['Series_Reps']}", key=key)
 
 # 🔄 Réinitialiser le bloc
 if st.button("🔁 Réinitialiser ce bloc"):
     for i, row in df_bloc.iterrows():
         key = get_key(row["Jour"], row["Bloc"], row["Series_Reps"])
-        st.session_state[key] = False
+        if key in st.session_state:
+            st.session_state[key] = False
     st.experimental_rerun()
 
 
