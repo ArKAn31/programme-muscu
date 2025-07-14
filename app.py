@@ -4,10 +4,10 @@ import pandas as pd
 # Titre
 st.markdown("# 💪 Ton Programme Muscu Stylé")
 
-# Lecture du fichier CSV
+# Lecture CSV
 df = pd.read_csv("programme.csv")
 
-# Sélection du jour et du bloc
+# Sélection du jour et du superset
 jours = sorted(df["Jour"].unique())
 jour_select = st.selectbox("📅 Sélectionne ton jour :", jours)
 
@@ -21,21 +21,25 @@ st.markdown(f"### 💥 *Exercice* : **_{exercice}_**")
 
 # 🔄 Réinitialisation
 if st.button("🔄 Réinitialiser ce bloc"):
-    for i, row in bloc_data.iterrows():
+    for _, row in bloc_data.iterrows():
         key = f"{jour_select}_{bloc_select}_{row['Series_Reps']}"
         if key in st.session_state:
             del st.session_state[key]
+    # 👉 force un refresh propre avec une clé de version
+    st.experimental_set_query_params(reset="1")
     st.rerun()
 
-# ✅ Cases à cocher
+# ✅ Affichage des checkboxes
 all_checked = True
-for i, row in bloc_data.iterrows():
+for _, row in bloc_data.iterrows():
     key = f"{jour_select}_{bloc_select}_{row['Series_Reps']}"
+    if key not in st.session_state:
+        st.session_state[key] = False
     checked = st.checkbox(f"🔥 {row['Series_Reps']}", key=key)
     if not checked:
         all_checked = False
 
-# 🎉 Validation finale
+# ✅ Validation
 if all_checked:
     st.success("✅ Superset validé, bien joué champion !")
 
