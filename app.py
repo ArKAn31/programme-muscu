@@ -23,26 +23,25 @@ jour_select = st.selectbox("📅 Sélectionne ton jour :", jours)
 blocs = sorted(df[df["Jour"] == jour_select]["Bloc"].unique())
 bloc_select = st.selectbox("🎯 Choisis ton Superset :", blocs)
 
-# 🔍 Filtrer le DataFrame selon jour + bloc
+# 🔍 Filtrer les données
 df_bloc = df[(df["Jour"] == jour_select) & (df["Bloc"] == bloc_select)]
 
-# 🏋️‍♂️ Afficher les infos du bloc
+# 🏋️‍♂️ Afficher l'exercice
 exercice = df_bloc.iloc[0]["Exercice"]
 st.markdown(f"### 💥 <span style='color:#000;'>Exercice : <em>{exercice}</em></span>", unsafe_allow_html=True)
 
-# ✅ Séries à cocher
+# ✅ Cases à cocher
 for i, row in df_bloc.iterrows():
     key = get_key(row["Jour"], row["Bloc"], row["Series_Reps"])
-    checked = st.session_state.get(key, False)
-    st.session_state[key] = st.checkbox(f"🔥 {row['Series_Reps']} : 10 reps", key=key, value=checked)
+    value = st.session_state.get(key, False)
+    st.session_state[key] = st.checkbox(f"🔥 {row['Series_Reps']}", key=key, value=value)
 
-# 🔁 Bouton de réinitialisation
-if st.button("🔄 Réinitialiser ce bloc"):
+# 🔄 Réinitialiser le bloc
+if st.button("🔁 Réinitialiser ce bloc"):
     for i, row in df_bloc.iterrows():
         key = get_key(row["Jour"], row["Bloc"], row["Series_Reps"])
         if key in st.session_state:
             del st.session_state[key]
-
     ctx = get_script_run_ctx()
     if ctx:
         raise RerunException(ctx)
